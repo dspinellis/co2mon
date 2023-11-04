@@ -78,19 +78,6 @@ def monitor(port, out, nvalues, csv_output, header_output, netdata_output,
         co2 = values[0x50]
         temperature = (values[0x42]/16.0-273.15)
 
-        if csv_output:
-            if header_output:
-                out.write("timestamp,temperature,CO2\n")
-                header_output = False
-            ts = (datetime.datetime
-                  .now()
-                  .astimezone()
-                  .replace(microsecond=0)
-                  .isoformat())
-            out.write(f"{ts},{temperature:.1f},{co2}\n")
-        elif not netdata_output:
-            out.write(f"CO₂: {co2:4d} ppm; Temp: {temperature:3.1f} °C    \r")
-            out.flush()
         if netdata_output:
             # Gather telegrams until update_every has lapsed
             # https://github.com/firehol/netdata/wiki/External-Plugins
@@ -111,6 +98,20 @@ def monitor(port, out, nvalues, csv_output, header_output, netdata_output,
             print('END')
 
             last_run = now
+
+        if csv_output:
+            if header_output:
+                out.write("timestamp,temperature,CO2\n")
+                header_output = False
+            ts = (datetime.datetime
+                  .now()
+                  .astimezone()
+                  .replace(microsecond=0)
+                  .isoformat())
+            out.write(f"{ts},{temperature:.1f},{co2}\n")
+        elif not netdata_output:
+            out.write(f"CO₂: {co2:4d} ppm; Temp: {temperature:3.1f} °C    \r")
+            out.flush()
         if interval:
             sleep(interval)
 
