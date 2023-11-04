@@ -3,7 +3,7 @@
 # based on code by henryk ploetz
 # https://hackaday.io/project/5301-reverse-engineering-a-low-cost-usb-co-monitor/log/17909-all-your-base-are-belong-to-us
 
-import sys, fcntl, time, os, argparse, socket
+import sys, fcntl, time, os, argparse
 
 def decrypt(key,  data):
     cstate = [0x48,  0x74,  0x65,  0x6D,  0x70,  0x39,  0x39,  0x65]
@@ -38,15 +38,6 @@ def now():
     return int(time.time())
 
 if __name__ == "__main__":
-    # use lock on socket to indicate that script is already running
-    try:
-        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        ## Create an abstract socket, by prefixing it with null.
-        s.bind('\0postconnect_gateway_notify_lock')
-    except socket.error, e:
-        # if script is already running just exit silently
-        sys.exit(0)
-            
     key = [0xc4, 0xc6, 0xc0, 0x92, 0x40, 0x23, 0xdc, 0x96]    
     fp = open(sys.argv[1], "a+b",  0)
     HIDIOCSFEATURE_9 = 0xC0094806
