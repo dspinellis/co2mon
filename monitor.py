@@ -3,7 +3,7 @@
 # based on code by henryk ploetz
 # https://hackaday.io/project/5301-reverse-engineering-a-low-cost-usb-co-monitor/log/17909-all-your-base-are-belong-to-us
 
-import sys, fcntl, os, argparse
+import datetime,sys, fcntl, os, argparse
 from time import time, sleep
 
 # Netdata update interval. This is the time actually taken to refresh an
@@ -80,9 +80,14 @@ def monitor(port, out, nvalues, csv_output, header_output, netdata_output,
 
         if csv_output:
             if header_output:
-                out.write("temperature,CO2\n")
+                out.write("timestamp,temperature,CO2\n")
                 header_output = False
-            out.write(f"{temperature:.1f},{co2}\n")
+            ts = (datetime.datetime
+                  .now()
+                  .astimezone()
+                  .replace(microsecond=0)
+                  .isoformat())
+            out.write(f"{ts},{temperature:.1f},{co2}\n")
         elif not netdata_output:
             out.write(f"CO₂: {co2:4d} ppm; Temp: {temperature:3.1f} °C    \r")
             out.flush()
