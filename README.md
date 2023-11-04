@@ -3,14 +3,11 @@
 Indoor measuring of Co2 and Temperature
 
 Especially in office environments employees are sensitive to high levels of Co2 and/or uncomfortably with hot office temperatures.
-This project consists of two parts, the monitor.py and the webinterface.
 
-* **monitor.py** to read the data from TFA-Dostmann sensors and generating the graphs
-* **webinterface** to display the graphs
-
-**Example Screenshot**
-
-![This is how it looks.](https://github.com/wreiner/officeweather/blob/master/example-screenshot.png)
+The software reads the data from TFA-Dostmann sensors. It can then
+* output real-time values\
+* Output CSV values
+* Act as a [netdata](https://www.netdata.cloud/) plugin
 
 # requirements
 
@@ -43,21 +40,8 @@ monitor.py should not run as root, so we create a service user (the group for th
 sudo adduser --home /var/local/monitor --shell /usr/sbin/nologin --disabled-password monitor
 ```
 
-1) install software
 
-Other than Wooga this setup generates and serves the graphs locally, thus the following components are needed:
-```
-sudo apt-get install rrdtool python-rrdtool nginx ntp
-cp /usr/share/zoneinfo/Europe/Vienna /etc/localtime                             
-
-systemctl enable nginx                                                                                                                                        
-systemctl start nginx
-
-systemctl enable ntp                                                            
-systemctl start ntp
-```
-
-Copy monitor.py and the webinterface to their location:
+2) Copy monitor.py and the webinterface to their location:
 
 ```
 sudo cp monitor.py /usr/bin
@@ -67,7 +51,7 @@ sudo mkdir /var/www/html/images
 sudo chown -R monitor: /var/www/html/images
 ```
 
-3) fix socket permissions
+3) fix device permissions
 
 The python script reading the sensor should not run as root, so the device permissions need to be set accordingly.
 
@@ -107,19 +91,17 @@ After plugging the TFA device in, at least one device file (e.g. /dev/hidraw0) s
 
 monitor.py can be tested by invoking:
 ```
-sudo -u monitor monitor.py /dev/hidraw0
+sudo -u monitor monitor.py -p /dev/hidraw0
 ```
 
 We need to run it as `monitor` user because by default RRD databse is located in the folder where only `monitor` user has access to and access to a socket was granted to monitor group.
 
 5) run on startup
 
-monitor.py can safely be called via a cronjob; it will exit if another instance is already running.
-
 The cronjob can be added to /etc/crontab like this:
 
 ```
-*/3 *   * * *   monitor /usr/bin/monitor.py /dev/hidraw0
+*/3 *   * * *   monitor /usr/bin/monitor.py -p /dev/hidraw0 -n 1
 ```
 
 # todo
