@@ -3,11 +3,7 @@
 # based on code by henryk ploetz
 # https://hackaday.io/project/5301-reverse-engineering-a-low-cost-usb-co-monitor/log/17909-all-your-base-are-belong-to-us
 
-import sys, fcntl, time, rrdtool, os, argparse, socket
-from rrdtool import update as rrd_update
-
-RRDDB_LOC = "/var/local/monitor/co2-temp.rrd"
-GRAPHOUT_DIR = "/var/www/html/images"
+import sys, fcntl, time, os, argparse, socket
 
 def decrypt(key,  data):
     cstate = [0x48,  0x74,  0x65,  0x6D,  0x70,  0x39,  0x39,  0x65]
@@ -41,43 +37,6 @@ def hd(d):
 def now():
     return int(time.time())
 
-def graphout(period):
-    filename = GRAPHOUT_DIR + "/co2-" + period + "-graph.png" 
-    rrdtool.graph(filename,
-        "--start", "now-"+period, "--end", "now",
-        "--title", "CO2",
-        "--vertical-label", "CO2 PPM",
-        "--width", "600",
-        "-h 200",
-        "-l 0",
-        "DEF:co2_num="+RRDDB_LOC+":CO2:AVERAGE",
-        "LINE1:co2_num#0000FF:CO2",
-        "GPRINT:co2_num:LAST: Last\\:%8.2lf %s ",
-        "GPRINT:co2_num:MIN: Min\\:%8.2lf %s ",
-        "GPRINT:co2_num:AVERAGE: Avg\\:%8.2lf %s ",
-        "GPRINT:co2_num:MAX: Max\\:%8.2lf %s\\n",
-        "HRULE:500#16F50F:OK",
-        "COMMENT: \\n",
-        "HRULE:800#FF952B:DEV-WARN",
-        "COMMENT: \\n",
-        "HRULE:1000#3FC0EB:OFF-WARN",
-        "COMMENT: \\n",
-        "HRULE:1200#DE2C2F:CRIT")
-
-    filename = GRAPHOUT_DIR + "/temp-" + period + "-graph.png" 
-    rrdtool.graph(filename,
-        "--start", "now-"+period, "--end", "now",
-        "--title", "TEMP",
-        "--vertical-label", "TEMP C",
-        "--width", "600",
-        "-h 200",
-        "DEF:temp_num="+RRDDB_LOC+":TEMP:AVERAGE",
-        "LINE1:temp_num#00FF00:TEMP",
-        "GPRINT:temp_num:LAST: Last\\:%8.2lf %s ",
-        "GPRINT:temp_num:MIN: Min\\:%8.2lf %s ",
-        "GPRINT:temp_num:AVERAGE: Avg\\:%8.2lf %s ",
-        "GPRINT:temp_num:MAX: Max\\:%8.2lf %s \\n")
-
 if __name__ == "__main__":
     # use lock on socket to indicate that script is already running
     try:
@@ -105,31 +64,6 @@ if __name__ == "__main__":
     values = {}
     stamp = now()
 
-    if not os.path.isfile(RRDDB_LOC):
-        print "RRD database not found, generating it .."
-
-        # updated every 5 minutes (--step 300)
-        # two datasources which can hold unlimit values min and max
-        # saves 1 day in 5-minute resolution (288 * (300*1/60) / 60/24)
-        # saves 1 week in in 15-minute resolution (672 * (300*3/60) / 60/24)
-        # saves 1 month in 1-hour resolution (744 * (300*12/60) / 60/24)
-        # saves 7 years in 1-hour resolution
-        rddbh = rrdtool.create(RRDDB_LOC, "--step", "300", "--start", '0',
-            "DS:CO2:GAUGE:600:U:U",
-            "DS:TEMP:GAUGE:600:U:U",
-            "RRA:AVERAGE:0.5:1:288",
-            "RRA:AVERAGE:0.5:3:672",
-            "RRA:AVERAGE:0.5:12:744",
-            "RRA:AVERAGE:0.5:12:61320",
-            "RRA:MIN:0.5:1:288",
-            "RRA:MIN:0.5:3:672",
-            "RRA:MIN:0.5:12:744",
-            "RRA:MIN:0.5:12:61320",
-            "RRA:MAX:0.5:1:288",
-            "RRA:MAX:0.5:3:672",
-            "RRA:MAX:0.5:12:744",
-            "RRA:MAX:0.5:12:61320")
-
     data_encrypted_print = False
     while True:
         data = list(ord(e) for e in fp.read(8))
@@ -156,10 +90,4 @@ if __name__ == "__main__":
             
                 if now() - stamp > 60:
                     print ">>> sending dataset CO2: %4i TMP: %3.1f .." % (co2, tmp)
-                    rrd_update(RRDDB_LOC, 'N:%s:%s' % (co2, tmp))
-                    graphout("8h")
-                    graphout("24h")
-                    graphout("7d")
-                    graphout("1m")
-                    graphout("1y")
                     stamp = now()
