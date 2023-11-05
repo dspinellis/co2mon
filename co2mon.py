@@ -181,7 +181,10 @@ def main():
         out = sys.stdout
     if args.netdata:
         netdata_configure()
-    monitor(args.port, out, args.nvalues, args.csv, args.header, args.netdata, args.report_interval, args.flush_interval)
+    monitor(port=args.port, out=out, nvalues=args.nvalues, csv_output=args.csv,
+            header_output=args.header, netdata_output=args.netdata,
+            report_interval=args.report_interval,
+            flush_interval=args.flush_interval)
 
 if __name__ == "__main__":
     main()
