@@ -111,14 +111,14 @@ def monitor(port, out, nvalues, csv_output, header_output, netdata_output,
                   .isoformat())
             out.write(f"{ts},{temperature:.1f},{co2}\n")
 
-            if time() - last_flush > flush_interval:
+            if flush_interval is not None and time() - last_flush > flush_interval:
                 out.flush()
                 last_flush = time()
 
         elif not netdata_output:
             out.write(f"CO₂: {co2:4d} ppm; Temp: {temperature:3.1f} °C    \r")
             out.flush()
-        if report_interval:
+        if report_interval is not None:
             sleep(report_interval)
 
         if nvalues:
