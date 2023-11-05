@@ -43,7 +43,7 @@ def now():
     return int(time.time())
 
 def monitor(port, out, nvalues, csv_output, header_output, netdata_output,
-            interval):
+            report_interval, flush_interval):
     """Monitoring loop"""
     global update_every
 
@@ -55,6 +55,7 @@ def monitor(port, out, nvalues, csv_output, header_output, netdata_output,
 
     values = {}
     last_run = dt_since_last_run = 0
+    last_flush = time()
     while True:
         byte_data = fp.read(8)
         data = list(byte_data)
@@ -109,11 +110,16 @@ def monitor(port, out, nvalues, csv_output, header_output, netdata_output,
                   .replace(microsecond=0)
                   .isoformat())
             out.write(f"{ts},{temperature:.1f},{co2}\n")
+
+            if time() - last_flush > flush_interval:
+                out.flush()
+                last_flush = time()
+
         elif not netdata_output:
             out.write(f"CO₂: {co2:4d} ppm; Temp: {temperature:3.1f} °C    \r")
             out.flush()
-        if interval:
-            sleep(interval)
+        if report_interval:
+            sleep(report_interval)
 
         if nvalues:
             nvalues -= 1
@@ -153,8 +159,8 @@ def main():
     parser.add_argument('-H', '--header',
                         help='Print CSV header',
                         action='store_true')
-    parser.add_argument('-i', '--interval', type=float,
-                        help='Interval between output values')
+    parser.add_argument('-f', '--flush-interval', type=float,
+                        help='Interval between flushing data to file')
     parser.add_argument('-N', '--netdata',
                         help='Act as a netdata external plugin',
                         action='store_true')
@@ -165,6 +171,8 @@ def main():
     parser.add_argument('-p', '--port',
                         help='Serial port to access (default: /dev/hidraw0)',
                         default='/dev/hidraw0')
+    parser.add_argument('-r', '--report-interval', type=float,
+                        help='Interval between reporting values')
 
     args = parser.parse_args()
     if args.output:
@@ -173,7 +181,7 @@ def main():
         out = sys.stdout
     if args.netdata:
         netdata_configure()
-    monitor(args.port, out, args.nvalues, args.csv, args.header, args.netdata, args.interval)
+    monitor(args.port, out, args.nvalues, args.csv, args.header, args.netdata, args.report_interval, args.flush_interval)
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,15 @@
+# Example of systemd service file for recording CO2 values
+
+[Unit]
+Description=CO2 monitoring Service
+Requires=systemd-udev-settle.service
+After=systemd-udev-settle.service
+
+[Service]
+User=root
+ExecStart=/usr/bin/python3 /usr/local/bin/co2mon -c -o /var/log/co2mon.out -p /dev/co2monitor
+Restart=on-failure
+Type=exec
+
+[Install]
+WantedBy=multi-user.target
