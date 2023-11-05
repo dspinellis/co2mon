@@ -90,7 +90,7 @@ def monitor(port, out, nvalues, csv_output, header_output, netdata_output,
             dt = int(dt_since_last_run * 1e6)
 
             print(f"BEGIN Air.temperature {dt}")
-            print(f"SET t = {temperature:.1f}")
+            print(f"SET t = {round(temperature * 10)}")
             print('END')
 
             print(f"BEGIN Air.co2 {dt}")
@@ -129,7 +129,7 @@ def netdata_configure():
     """
     sys.stdout.write("""
 CHART Air.temperature 'T' 'Temperature' 'Celsius'
-DIMENSION t 'Air temperature'
+DIMENSION t 'Air temperature' absolute 1 10
 
 CHART Air.co2 'CO2' 'CO2 concentration' 'ppm'
 DIMENSION co2 'CO2 concentration'
